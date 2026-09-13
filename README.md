@@ -4,7 +4,15 @@ FinFlow is a backend service for managing customers, accounts and financial tran
 
 ## Why this project exists
 
-Financial systems must protect data integrity even when a transaction fails. FinFlow keeps deposits, withdrawals and transfers inside database transactions, rejects invalid operations and locks account rows during balance changes.
+People routinely retry a payment when a slow or unstable connection makes it unclear whether
+the first request succeeded. A naive system can apply that request twice, debit only one side of
+a transfer or leave balances inconsistent.
+
+FinFlow is a self-initiated learning project that explores how a small financial API can handle
+those failure conditions deliberately. It keeps deposits, withdrawals and transfers inside
+database transactions, rejects invalid operations, locks account rows during balance changes and
+uses idempotency keys to make client retries safe. It is an educational prototype, not a real
+banking product.
 
 ## Current features
 
@@ -86,6 +94,20 @@ The test suite uses an isolated in-memory SQLite database for fast feedback. Doc
 
 Complete request schemas and example payloads are available in Swagger UI.
 
+### Example transfer request
+
+```bash
+curl -X POST http://localhost:8000/api/v1/transactions/transfer \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: transfer-2026-0001" \
+  -d '{
+    "source_account_id": "SOURCE_ACCOUNT_UUID",
+    "destination_account_id": "DESTINATION_ACCOUNT_UUID",
+    "amount": "250.00",
+    "reference": "Shared groceries"
+  }'
+```
+
 For a visual walkthrough, open `/demo` and select **Create demo scenario**. FinFlow will
 create two temporary customers, fund one account and make a transfer while showing the
 resulting balances and API activity. You can then send additional transfers from the page.
@@ -109,6 +131,37 @@ The script creates two customers and accounts, deposits ZAR 1,000 and transfers 
 - Balance changes and transaction records commit together.
 - Clients can send an `Idempotency-Key` header so a network retry cannot apply the same
   deposit, withdrawal or transfer twice. Reusing a key with different inputs is rejected.
+
+## Engineering decisions
+
+| Decision | Reason | Trade-off |
+| --- | --- | --- |
+| `Decimal` and `NUMERIC(18, 2)` for money | Avoid binary floating-point rounding errors | This prototype supports two-decimal currencies only |
+| Service layer separate from API routes | Keeps business rules testable without mixing them with HTTP concerns | Adds a small amount of structure to a compact application |
+| Deterministic row-lock order | Reduces deadlock risk when two accounts are updated | Row locking depends on database support; SQLite tests validate rules, not PostgreSQL lock behaviour |
+| Client-supplied idempotency keys | Makes network retries safe without applying a payment twice | Production systems also need expiry, ownership and storage policies for keys |
+| SQLite for automated tests, PostgreSQL for Docker | Keeps the test suite fast while demonstrating a production-oriented relational database | PostgreSQL-specific behaviour still needs integration tests |
+
+## Limitations and next steps
+
+FinFlow deliberately focuses on transaction integrity rather than pretending to be production-ready.
+It does not yet include authentication, authorisation, fraud controls, encryption-key management,
+audit retention, rate limiting, database migrations or PostgreSQL integration tests. The public demo
+uses disposable data and must never receive real personal or financial information.
+
+The next engineering milestones are:
+
+1. Add Alembic migrations and PostgreSQL integration tests.
+2. Associate idempotency keys with authenticated clients and define an expiry policy.
+3. Add role-based access control and an immutable audit trail.
+4. Publish service metrics for latency, failures and transaction outcomes.
+
+## Try it and share feedback
+
+The quickest review path is the interactive `/demo` page. Testers are asked to try the normal
+transfer flow, an overdraft and a repeated request, then comment on what was clear, confusing or
+missing. Feedback and resulting changes will be recorded in repository issues so the evolution of
+the project remains visible.
 
 ## Roadmap
 
