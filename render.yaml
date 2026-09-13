@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: finflow-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite+pysqlite:///./finflow-demo.db
+      - key: ENVIRONMENT
+        value: demo
+      - key: PYTHON_VERSION
+        value: 3.12.14
