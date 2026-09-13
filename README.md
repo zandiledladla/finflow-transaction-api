@@ -14,10 +14,12 @@ Financial systems must protect data integrity even when a transaction fails. Fin
 - Account-specific transaction statements
 - Deposit and withdraw funds
 - Transfer funds between accounts using the same currency
+- Idempotency keys that make retried money operations safe
 - Prevent overdrafts and self-transfers
 - Store money with fixed decimal precision
 - Lock account rows while balances are updated
 - Interactive OpenAPI documentation
+- Recruiter-friendly interactive browser demo
 - Automated API tests and GitHub Actions CI
 - Docker Compose development environment with PostgreSQL
 - Automatic database bootstrap for the first development milestone
@@ -54,6 +56,7 @@ docker compose up --build
 
 Open:
 
+- Interactive demo: `http://localhost:8000/demo`
 - API documentation: `http://localhost:8000/docs`
 - Health endpoint: `http://localhost:8000/health`
 
@@ -83,6 +86,10 @@ The test suite uses an isolated in-memory SQLite database for fast feedback. Doc
 
 Complete request schemas and example payloads are available in Swagger UI.
 
+For a visual walkthrough, open `/demo` and select **Create demo scenario**. FinFlow will
+create two temporary customers, fund one account and make a transfer while showing the
+resulting balances and API activity. You can then send additional transfers from the page.
+
 ## Load demonstration data
 
 With the local SQLite configuration active, run:
@@ -100,12 +107,12 @@ The script creates two customers and accounts, deposits ZAR 1,000 and transfers 
 - Transfers require accounts with matching currencies.
 - Source and destination account rows are locked in deterministic order.
 - Balance changes and transaction records commit together.
+- Clients can send an `Idempotency-Key` header so a network retry cannot apply the same
+  deposit, withdrawal or transfer twice. Reusing a key with different inputs is rejected.
 
 ## Roadmap
 
 - Alembic database migrations
-- Idempotency keys to prevent duplicate payments
-- Transaction pagination and account statements
 - Authentication and authorisation
 - Background event processing
 - Metrics and production deployment
