@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Interactive demonstration of the FinFlow transaction API">
+    <title>FinFlow | Transaction API Demo</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <header class="hero">
+      <nav>
+        <a class="brand" href="/demo">FinFlow<span>.</span></a>
+        <div class="nav-links">
+          <a href="/docs">API docs</a>
+          <a href="https://github.com/zandiledladla/finflow-transaction-api">GitHub</a>
+        </div>
+      </nav>
+      <div class="hero-copy">
+        <p class="eyebrow">Transaction integrity, made visible</p>
+        <h1>A financial API built around safe money movement.</h1>
+        <p class="intro">Create two accounts, fund a sender and execute a transaction-safe transfer through the live API.</p>
+        <button id="create-demo" class="primary">Create demo scenario</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="principles" aria-label="Engineering principles">
+        <article><strong>Atomic</strong><span>Balances and records commit together.</span></article>
+        <article><strong>Idempotent</strong><span>Retries cannot duplicate a payment.</span></article>
+        <article><strong>Validated</strong><span>Overdrafts and invalid transfers are rejected.</span></article>
+      </section>
+
+      <section class="workspace">
+        <div class="section-heading">
+          <div><p class="eyebrow">Interactive workflow</p><h2>Account balances</h2></div>
+          <span id="status" class="status">Waiting to start</span>
+        </div>
+        <div class="accounts">
+          <article class="account-card">
+            <span>Sender</span><h3 id="sender-name">Not created</h3>
+            <p><strong id="sender-balance">R0.00</strong> ZAR</p>
+          </article>
+          <article class="account-card accent">
+            <span>Recipient</span><h3 id="recipient-name">Not created</h3>
+            <p><strong id="recipient-balance">R0.00</strong> ZAR</p>
+          </article>
+        </div>
+
+        <form id="transfer-form">
+          <label for="amount">Transfer amount</label>
+          <div class="form-row">
+            <div class="amount-field"><span>R</span><input id="amount" name="amount" type="number" value="125" min="0.01" step="0.01" required></div>
+            <button class="primary" type="submit" disabled>Send transfer</button>
+          </div>
+          <p>Each submission uses a unique idempotency key, just like a production payment client.</p>
+        </form>
+
+        <div class="activity-panel">
+          <div class="section-heading compact"><h2>API activity</h2><button id="clear-log" class="text-button" type="button">Clear</button></div>
+          <ol id="activity" aria-live="polite"><li class="empty">Requests will appear here.</li></ol>
+        </div>
+      </section>
+
+      <section class="engineering">
+        <p class="eyebrow">What this demonstrates</p>
+        <h2>Designed for failures, not only the happy path.</h2>
+        <p>FinFlow uses fixed-precision decimals, database transactions, deterministic row locking, non-negative balance constraints and idempotency-key conflict detection. Its routes, services and persistence models are separated and covered by automated tests.</p>
+        <a href="/docs">Inspect the OpenAPI contract →</a>
+      </section>
+    </main>
+    <footer>Designed and engineered by Zandile Dladla.</footer>
+  </body>
+</html>
