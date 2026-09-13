@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -21,20 +21,44 @@ def _run(operation):
 
 @router.post("/accounts/{account_id}/deposit", response_model=TransactionRead)
 def deposit(
-    account_id: uuid.UUID, payload: MoneyOperation, db: Session = Depends(get_db)
+    account_id: uuid.UUID,
+    payload: MoneyOperation,
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Header(
+        default=None, alias="Idempotency-Key", max_length=128
+    ),
 ) -> Transaction:
-    return _run(lambda: service.deposit(db, account_id, payload.amount, payload.reference))
+    return _run(
+        lambda: service.deposit(
+            db, account_id, payload.amount, payload.reference, idempotency_key
+        )
+    )
 
 
 @router.post("/accounts/{account_id}/withdraw", response_model=TransactionRead)
 def withdraw(
-    account_id: uuid.UUID, payload: MoneyOperation, db: Session = Depends(get_db)
+    account_id: uuid.UUID,
+    payload: MoneyOperation,
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Header(
+        default=None, alias="Idempotency-Key", max_length=128
+    ),
 ) -> Transaction:
-    return _run(lambda: service.withdraw(db, account_id, payload.amount, payload.reference))
+    return _run(
+        lambda: service.withdraw(
+            db, account_id, payload.amount, payload.reference, idempotency_key
+        )
+    )
 
 
 @router.post("/transfer", response_model=TransactionRead)
-def transfer(payload: TransferCreate, db: Session = Depends(get_db)) -> Transaction:
+def transfer(
+    payload: TransferCreate,
+    db: Session = Depends(get_db),
+    idempotency_key: str | None = Header(
+        default=None, alias="Idempotency-Key", max_length=128
+    ),
+) -> Transaction:
     return _run(
         lambda: service.transfer(
             db,
@@ -42,6 +66,7 @@ def transfer(payload: TransferCreate, db: Session = Depends(get_db)) -> Transact
             payload.destination_account_id,
             payload.amount,
             payload.reference,
+            idempotency_key,
         )
     )
 

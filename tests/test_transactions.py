@@ -131,3 +131,54 @@ def test_account_statement_contains_related_transactions(client):
     assert response.status_code == 200
     assert len(response.json()) == 2
     assert {item["reference"] for item in response.json()} == {"Salary", "Groceries"}
+
+
+def test_idempotency_key_prevents_duplicate_transfer(client):
+    sender = create_customer(client, "Sender", "sender@example.com")
+    recipient = create_customer(client, "Recipient", "recipient@example.com")
+    source = create_account(client, sender["id"])
+    destination = create_account(client, recipient["id"])
+    client.post(
+        f"/api/v1/transactions/accounts/{source['id']}/deposit",
+        json={"amount": "500.00"},
+    )
+    payload = {
+        "source_account_id": source["id"],
+        "destination_account_id": destination["id"],
+        "amount": "75.00",
+        "reference": "Idempotent payment",
+    }
+    headers = {"Idempotency-Key": "payment-2026-0001"}
+
+    first = client.post("/api/v1/transactions/transfer", json=payload, headers=headers)
+    retry = client.post("/api/v1/transactions/transfer", json=payload, headers=headers)
+
+    assert first.status_code == 200
+    assert retry.status_code == 200
+    assert retry.json()["id"] == first.json()["id"]
+    assert Decimal(client.get(f"/api/v1/accounts/{source['id']}").json()["balance"]) == Decimal(
+        "425.00"
+    )
+
+
+def test_idempotency_key_cannot_be_reused_for_different_request(client):
+    customer = create_customer(client, "Zandile Dladla", "zandile@example.com")
+    account = create_account(client, customer["id"])
+    headers = {"Idempotency-Key": "deposit-2026-0001"}
+
+    client.post(
+        f"/api/v1/transactions/accounts/{account['id']}/deposit",
+        json={"amount": "100.00"},
+        headers=headers,
+    )
+    conflict = client.post(
+        f"/api/v1/transactions/accounts/{account['id']}/deposit",
+        json={"amount": "200.00"},
+        headers=headers,
+    )
+
+    assert conflict.status_code == 400
+    assert conflict.json()["detail"] == "Idempotency key was already used for a different request"
+    assert Decimal(client.get(f"/api/v1/accounts/{account['id']}").json()["balance"]) == Decimal(
+        "100.00"
+    )

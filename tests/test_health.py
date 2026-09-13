@@ -10,4 +10,12 @@ def test_root_describes_service(client):
 
     assert response.status_code == 200
     assert response.json()["documentation"] == "/docs"
+    assert response.json()["demo"] == "/demo"
     assert "X-Request-ID" in response.headers
+
+
+def test_interactive_demo_is_available(client):
+    response = client.get("/demo")
+
+    assert response.status_code == 200
+    assert "FinFlow" in response.text
