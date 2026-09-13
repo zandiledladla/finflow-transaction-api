@@ -2,8 +2,11 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app import models  # noqa: F401
 from app.api.router import api_router
@@ -30,6 +33,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(api_router, prefix="/api/v1")
+static_directory = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=static_directory), name="static")
 
 
 @app.middleware("http")
@@ -57,7 +62,13 @@ def service_information() -> dict[str, str]:
         "version": settings.app_version,
         "documentation": "/docs",
         "health": "/health",
+        "demo": "/demo",
     }
+
+
+@app.get("/demo", include_in_schema=False)
+def interactive_demo() -> FileResponse:
+    return FileResponse(static_directory / "index.html")
 
 
 @app.get("/health", tags=["health"])
