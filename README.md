@@ -5,6 +5,7 @@ FinFlow is a backend service for managing customers, accounts and financial tran
 ## Live demonstration
 
 - Interactive demo: https://finflow-demo-7iri.onrender.com/demo
+- 80-second video walkthrough: https://youtu.be/_msVTq99_nU
 - OpenAPI documentation: https://finflow-demo-7iri.onrender.com/docs
 - Health check: https://finflow-demo-7iri.onrender.com/health
 
